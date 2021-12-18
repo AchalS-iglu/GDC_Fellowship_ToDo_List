@@ -1,14 +1,13 @@
-#print("Hello, World!")
-
 import sys
 
-class ToDo():
-    def __init__(self):
 
+class ToDo():
+    def __init__(self):  # Main Logic
+        # List that will contain their corresponging tasks, will make the code more streamlined.
         self.pending = []
         self.completed = []
 
-        self.helptext="""Usage :-
+        self.helptext = """Usage :-
 $ ./task add 2 hello world    # Add a new item with priority 2 and text "hello world" to the list
 $ ./task ls                   # Show incomplete priority list items sorted by priority in ascending order
 $ ./task del INDEX            # Delete the incomplete item with the given index
@@ -16,51 +15,44 @@ $ ./task done INDEX           # Mark the incomplete item with the given index as
 $ ./task help                 # Show usage
 $ ./task report               # Statistics"""
 
-        try:
-            args = sys.argv
+        args = sys.argv  # List of arguments passed
 
-            if len(args) == 1:
-                sys.stdout.buffer.write(self.helptext.encode('utf-8'))
-            
-            elif args[1] == 'help':
-                sys.stdout.buffer.write(self.helptext.encode('utf-8'))
+        # Figuring out which command was actually run
+        if len(args) == 1:
+            sys.stdout.buffer.write(self.helptext.encode('utf-8'))  # If there is only 1 argument it means that no argument was passed.
 
-            elif args[1] == 'add':
-                if len(args) < 4:
-                    sys.stdout.buffer.write('Error: Missing tasks string. Nothing added!'.encode('utf-8'))
-                else:                  
-                    self.add(args[2], args[3])
-                    sys.stdout.buffer.write(f'Added task: "{args[2]}" with priority {args[3]}'.encode('utf-8'))
-                                        
-            elif args[1] == 'ls':
-                self.ls()
-            
-            elif args[1] == 'del':
-                if len(args) < 3:
-                    sys.stdout.buffer.write('Error: Missing NUMBER for deleting tasks.'.encode('utf-8'))
-                else:
-                    x = self.delete(args[2])
-                    if x == True:
-                        sys.stdout.buffer.write(f'Deleted task #{args[2]}'.encode('utf-8'))
-            
-            elif args[1] == 'done':
-                if len(args) < 3:
-                    sys.stdout.buffer.write('Error: Missing NUMBER for marking tasks as done.'.encode('utf-8'))
-                else:
-                    x = self.done(args[2])
-                    if x == True:
-                        sys.stdout.buffer.write('Marked item as done.'.encode('utf-8'))
-            
-            elif args[1] == 'report':
-                self.report()
-            
+        elif args[1] == 'help':
+            sys.stdout.buffer.write(self.helptext.encode('utf-8'))
 
-        #except IndexError as error:
-        #    sys.stdout.buffer.write(self.helptext.encode('utf-8'))
+        elif args[1] == 'add':
+            if len(args) < 4:  # Checking to see if the right amount of arguments was passed
+                sys.stdout.buffer.write('Error: Missing tasks string. Nothing added!'.encode('utf-8'))
+            else:
+                self.add(args[2], args[3])
+                sys.stdout.buffer.write(f'Added task: "{args[2]}" with priority {args[3]}'.encode('utf-8'))
 
-        except Exception as error:
-            raise error
- 
+        elif args[1] == 'ls':
+            self.ls()
+
+        elif args[1] == 'del':
+            if len(args) < 3:
+                sys.stdout.buffer.write('Error: Missing NUMBER for deleting tasks.'.encode('utf-8'))
+            else:
+                x = self.delete(args[2])
+                if x:
+                    sys.stdout.buffer.write(f'Deleted task #{args[2]}'.encode('utf-8'))  # Since I am reusing the delete function in done I will send output here.
+
+        elif args[1] == 'done':
+            if len(args) < 3:
+                sys.stdout.buffer.write('Error: Missing NUMBER for marking tasks as done.'.encode('utf-8'))
+            else:
+                x = self.done(args[2])
+                if x:
+                    sys.stdout.buffer.write('Marked item as done.'.encode('utf-8'))
+
+        elif args[1] == 'report':
+            self.report()
+
     def ls(self):
         self.update_pending()
         list = self.pending
@@ -68,60 +60,54 @@ $ ./task report               # Statistics"""
         if len(list) == 0:
             sys.stdout.buffer.write(f'There are no pending tasks!'.encode('utf-8'))
 
-
         count = 1
         for i in list:
             i = i.split(' ', 1)
-            #print(i)
             sys.stdout.buffer.write(f'{(count)}. {i[1]} [{i[0]}]\n'.encode('utf-8'))
             count += 1
-            
+
     def add(self, priority, task):
         try:
-            try:
-                priority = int(priority)
-                if int(priority) < 0:
-                    sys.stdout.buffer.write('Prority has to be a positive integer or 0.'.encode('utf-8'))
-                    return
- 
-            except ValueError as error:
-                sys.stdout.buffer.write('Prority has to be a positive integer or 0.'.encode('utf-8'))
+            priority = int(priority)
+            if int(priority) < 0:
+                sys.stdout.buffer.write('Priority has to be a positive integer or 0.'.encode('utf-8'))
                 return
 
-            self.update_pending()
-            lines = self.pending
+        except ValueError as error:
+            sys.stdout.buffer.write('Priority has to be a positive integer or 0.'.encode('utf-8'))
+            return
 
-            f = open('task.txt', 'w+')
-            added = False
+        self.update_pending()
+        lines = self.pending
 
-            for l in lines:
-                if int(( l.split(' ', 1) )[0]) <= priority:
-                    continue
-                else:
+        f = open('task.txt', 'w+')
+        added = False
 
-                    lines.insert(int(lines.index(f'{l}')), f'{priority} {task}')
-                    lines = "\n".join(lines)
-                    f.write(lines)
-                    added = True
-                    break
-            
-            if added == False:
-                lines.append(f'{priority} {task}')
+        for line in lines:
+            if int((line.split(' ', 1))[0]) <= priority:
+                continue
+            else:
+
+                lines.insert(int(lines.index(f'{line}')), f'{priority} {task}')
                 lines = "\n".join(lines)
                 f.write(lines)
                 added = True
-            
-            f.close()
-            self.update_pending()
-            sys.stdout.buffer.write(f'Added task: "{task}" with priority {priority}'.encode('utf-8'))
-            
-        except Exception as error:
-            raise error
+                break
+
+        if not added:
+            lines.append(f'{priority} {task}')
+            lines = "\n".join(lines)
+            f.write(lines)
+            added = True
+
+        f.close()
+        self.update_pending()
+        sys.stdout.buffer.write(f'Added task: "{task}" with priority {priority}'.encode('utf-8'))
 
     def delete(self, index):
         self.update_pending()
         lines = self.pending
-        
+
         f = open("task.txt", "w")
 
         try:
@@ -138,51 +124,48 @@ $ ./task report               # Statistics"""
         except ValueError as error:
             sys.stdout.buffer.write('The index has to be a valid positive integer'.encode('utf-8'))
             return False
-        
+
         lines = '\n'.join(lines)
         f.write(lines)
         f.close()
         self.update_pending()
+
         return True
 
     def done(self, index):
         try:
-            try:
-                index = int(index)
-                if int(index) < 0:
-                    sys.stdout.buffer.write('Invalid index provided.'.encode('utf-8'))
-                    return
- 
-            except ValueError as error:
+            index = int(index)
+            if int(index) < 0:
                 sys.stdout.buffer.write('Invalid index provided.'.encode('utf-8'))
                 return
 
-            self.update_pending()
+        except ValueError as error:
+            sys.stdout.buffer.write('Invalid index provided.'.encode('utf-8'))
+            return
 
-            try:
-                if index < 1:
-                    sys.stdout.buffer.write(f'Error: no incomplete item with index #{index} exists.'.encode('utf-8'))
-                    return False
-                task = self.pending[index - 1]     
-            except IndexError as error:
+        self.update_pending()
+
+        try:
+            if index < 1:
                 sys.stdout.buffer.write(f'Error: no incomplete item with index #{index} exists.'.encode('utf-8'))
                 return False
+            task = self.pending[index - 1]
+        except IndexError as error:
+            sys.stdout.buffer.write(f'Error: no incomplete item with index #{index} exists.'.encode('utf-8'))
+            return False
 
-            self.delete(index)
+        self.delete(index)
 
-            self.update_completed()
-            lines = self.completed
-            f = open('completed.txt', 'w')
+        self.update_completed()
+        lines = self.completed
+        f = open('completed.txt', 'w')
 
-            lines.append(task.split(' ', 1)[1])
-            lines = '\n'.join(lines)
-            f.write(lines)
-            f.close()
+        lines.append(task.split(' ', 1)[1])
+        lines = '\n'.join(lines)
+        f.write(lines)
+        f.close()
 
-            return True
-
-        except Exception as error:
-            raise error
+        return True
 
     def report(self):
         self.update_completed()
@@ -204,48 +187,38 @@ $ ./task report               # Statistics"""
             sys.stdout.buffer.write(f'{count}. {task}\n'.encode('utf-8'))
             count += 1
 
-    def update_pending(self):
+    def update_pending(self):  # Function that updates the pending tasks list made above
         try:
-            try:
-                f = open('task.txt', 'r')
-            except FileNotFoundError as error:
-                f = open('task.txt', 'x')
-                f.close()
-                f = open('task.txt', 'r')
-            lis = []
-
-            for l in f.readlines():
-                l = l.strip('\n')
-                lis.append(l)
-
-            self.pending = lis
+            f = open('task.txt', 'r')
+        except FileNotFoundError as error:
+            f = open('task.txt', 'x')
             f.close()
+            f = open('task.txt', 'r')
+        lis = []
 
-        except Exception as error:
-            raise error
-    
-    def update_completed(self):
+        for line in f.readlines():
+            line = line.strip('\n')
+            lis.append(line)
+
+        self.pending = lis
+        f.close()
+
+    def update_completed(self):  # Function that updates the completed tasks list made above
         try:
-            try:
-                f = open('completed.txt', 'r')
-            except FileNotFoundError as error:
-                f = open('completed.txt', 'x')
-                f.close()
-                f = open('completed.txt', 'r')
-            lis = []
-
-            for l in f.readlines():
-                l = l.strip('\n')
-                lis.append(l)
-
-            self.completed = lis
+            f = open('completed.txt', 'r')
+        except FileNotFoundError as error:
+            f = open('completed.txt', 'x')
             f.close()
+            f = open('completed.txt', 'r')
+        lis = []
 
-        except Exception as error:
-            raise error
-    
+        for line in f.readlines():
+            line = line.strip('\n')
+            lis.append(line)
+
+        self.completed = lis
+        f.close()
+
 
 if __name__ == "__main__":
     ToDo()
-    #args = parser.parse_args()
-    #print(args.test)
