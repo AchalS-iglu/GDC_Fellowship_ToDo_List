@@ -36,12 +36,20 @@ $ ./task report               # Statistics"""
                 self.ls()
             
             elif args[1] == 'del':
-                self.delete(args[2])
-                sys.stdout.buffer.write(f'Deleted item with index {args[2]}'.encode('utf-8'))
+                if len(args) < 3:
+                    sys.stdout.buffer.write('Error: Missing NUMBER for deleting tasks.'.encode('utf-8'))
+                else:
+                    x = self.delete(args[2])
+                    if x == True:
+                        sys.stdout.buffer.write(f'Deleted task #{args[2]}'.encode('utf-8'))
             
             elif args[1] == 'done':
-                self.done(args[2])
-                sys.stdout.buffer.write('Marked item as done.'.encode('utf-8'))
+                if len(args) < 3:
+                    sys.stdout.buffer.write('Error: Missing NUMBER for marking tasks as done.'.encode('utf-8'))
+                else:
+                    x = self.done(args[2])
+                    if x == True:
+                        sys.stdout.buffer.write('Marked item as done.'.encode('utf-8'))
             
             elif args[1] == 'report':
                 self.report()
@@ -54,22 +62,20 @@ $ ./task report               # Statistics"""
             raise error
  
     def ls(self):
-        try:
-            self.update_pending()
+        self.update_pending()
+        list = self.pending
 
-            count = 1
-            for i in self.pending:
-                i = i.split(' ', 1)
-                #print(i)
-                sys.stdout.buffer.write(f'{(count)}. {i[1]} [{i[0]}]\n'.encode('utf-8'))
-                count += 1
+        if len(list) == 0:
+            sys.stdout.buffer.write(f'There are no pending tasks!'.encode('utf-8'))
 
-        except FileNotFoundError as error:
-            sys.stdout.buffer.write('The tasks file not found, kindly begin by adding new tasks!'.encode('utf-8'))
+
+        count = 1
+        for i in list:
+            i = i.split(' ', 1)
+            #print(i)
+            sys.stdout.buffer.write(f'{(count)}. {i[1]} [{i[0]}]\n'.encode('utf-8'))
+            count += 1
             
-        except Exception as error:
-            raise error
-
     def add(self, priority, task):
         try:
             try:
@@ -119,16 +125,25 @@ $ ./task report               # Statistics"""
         f = open("task.txt", "w")
 
         try:
+            if int(index) < 1:
+                sys.stdout.buffer.write(f'Error: task with index #{index} does not exist. Nothing deleted.'.encode('utf-8'))
+                return False
+
             del lines[int(index) - 1]
+
         except IndexError as error:
-            sys.stdout.buffer.write(f'Error: item with index {index} does not exist. Nothing deleted.'.encode('utf-8'))
+            sys.stdout.buffer.write(f'Error: task with index #{index} does not exist. Nothing deleted.'.encode('utf-8'))
+            return False
+
         except ValueError as error:
             sys.stdout.buffer.write('The index has to be a valid positive integer'.encode('utf-8'))
+            return False
         
         lines = '\n'.join(lines)
         f.write(lines)
         f.close()
         self.update_pending()
+        return True
 
     def done(self, index):
         try:
@@ -145,10 +160,13 @@ $ ./task report               # Statistics"""
             self.update_pending()
 
             try:
+                if index < 1:
+                    sys.stdout.buffer.write(f'Error: no incomplete item with index #{index} exists.'.encode('utf-8'))
+                    return False
                 task = self.pending[index - 1]     
             except IndexError as error:
-                sys.stdout.buffer.write(f'Error: no incomplete item with index {index} exists.'.encode('utf-8'))
-                return
+                sys.stdout.buffer.write(f'Error: no incomplete item with index #{index} exists.'.encode('utf-8'))
+                return False
 
             self.delete(index)
 
@@ -160,6 +178,8 @@ $ ./task report               # Statistics"""
             lines = '\n'.join(lines)
             f.write(lines)
             f.close()
+
+            return True
 
         except Exception as error:
             raise error
@@ -178,14 +198,20 @@ $ ./task report               # Statistics"""
             sys.stdout.buffer.write(f'{(count)}. {task[1]} [{task[0]}]\n'.encode('utf-8'))
             count += 1
 
-        sys.stdout.buffer.write(f'Completed : {len(completed)}\n'.encode('utf-8'))
+        sys.stdout.buffer.write(f'\nCompleted : {len(completed)}\n'.encode('utf-8'))
         count = 1
         for task in completed:
             sys.stdout.buffer.write(f'{count}. {task}\n'.encode('utf-8'))
+            count += 1
 
     def update_pending(self):
         try:
-            f = open('task.txt', 'a+')
+            try:
+                f = open('task.txt', 'r')
+            except FileNotFoundError as error:
+                f = open('task.txt', 'x')
+                f.close()
+                f = open('task.txt', 'r')
             lis = []
 
             for l in f.readlines():
@@ -200,7 +226,12 @@ $ ./task report               # Statistics"""
     
     def update_completed(self):
         try:
-            f = open('completed.txt', 'a+')
+            try:
+                f = open('completed.txt', 'r')
+            except FileNotFoundError as error:
+                f = open('completed.txt', 'x')
+                f.close()
+                f = open('completed.txt', 'r')
             lis = []
 
             for l in f.readlines():
