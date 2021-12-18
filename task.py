@@ -18,15 +18,20 @@ $ ./task report               # Statistics"""
 
         try:
             args = sys.argv
-            #print(args)
 
-            if args[1] == 'help':
+            if len(args) == 1:
+                sys.stdout.buffer.write(self.helptext.encode('utf-8'))
+            
+            elif args[1] == 'help':
                 sys.stdout.buffer.write(self.helptext.encode('utf-8'))
 
-            elif args[1] == 'add':                   
-                self.add(args[2], args[3])
-                sys.stdout.buffer.write(f'Added task: "{args[2]}" with priority {args[3]}'.encode('utf-8'))
-                                       
+            elif args[1] == 'add':
+                if len(args) < 4:
+                    sys.stdout.buffer.write('Error: Missing tasks string. Nothing added!'.encode('utf-8'))
+                else:                  
+                    self.add(args[2], args[3])
+                    sys.stdout.buffer.write(f'Added task: "{args[2]}" with priority {args[3]}'.encode('utf-8'))
+                                        
             elif args[1] == 'ls':
                 self.ls()
             
@@ -37,6 +42,10 @@ $ ./task report               # Statistics"""
             elif args[1] == 'done':
                 self.done(args[2])
                 sys.stdout.buffer.write('Marked item as done.'.encode('utf-8'))
+            
+            elif args[1] == 'report':
+                self.report()
+            
 
         #except IndexError as error:
         #    sys.stdout.buffer.write(self.helptext.encode('utf-8'))
@@ -47,7 +56,6 @@ $ ./task report               # Statistics"""
     def ls(self):
         try:
             self.update_pending()
-            n = len(self.pending)
 
             count = 1
             for i in self.pending:
@@ -156,9 +164,28 @@ $ ./task report               # Statistics"""
         except Exception as error:
             raise error
 
+    def report(self):
+        self.update_completed()
+        self.update_pending()
+
+        pending = self.pending
+        completed = self.completed
+
+        sys.stdout.buffer.write(f'Pending : {len(pending)}\n'.encode('utf-8'))
+        count = 1
+        for task in pending:
+            task = task.split(' ', 1)
+            sys.stdout.buffer.write(f'{(count)}. {task[1]} [{task[0]}]\n'.encode('utf-8'))
+            count += 1
+
+        sys.stdout.buffer.write(f'Completed : {len(completed)}\n'.encode('utf-8'))
+        count = 1
+        for task in completed:
+            sys.stdout.buffer.write(f'{count}. {task}\n'.encode('utf-8'))
+
     def update_pending(self):
         try:
-            f = open('task.txt', 'r')
+            f = open('task.txt', 'a+')
             lis = []
 
             for l in f.readlines():
@@ -173,7 +200,7 @@ $ ./task report               # Statistics"""
     
     def update_completed(self):
         try:
-            f = open('completed.txt', 'r')
+            f = open('completed.txt', 'a+')
             lis = []
 
             for l in f.readlines():
